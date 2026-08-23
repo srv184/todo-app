@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# Android
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+*.keystore
+!debug.keystore
+
+# iOS
+ios/Pods/
+ios/build/
+
+# React Native / Metro
+.expo/
+npm-debug.log
+yarn-error.log
+
+# Env
+.env
+
+# OS
+.DS_Store
