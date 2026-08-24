@@ -11,16 +11,18 @@ export default function AddTaskScreen({ navigation }: any) {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('General');
   const [priority, setPriority] = useState<Priority>('medium');
+  const [dateTime, setDateTime] = useState(''); // YYYY-MM-DDTHH:mm
   const [deadline, setDeadline] = useState(''); // simple text input, e.g. 2026-08-30T18:00
   const [submitting, setSubmitting] = useState(false);
 
   const handleSave = async () => {
-    if (!title.trim() || !deadline) {
-      Alert.alert('Missing info', 'Title and deadline are required.');
+    if (!title.trim() || !dateTime || !deadline) {
+      Alert.alert('Missing info', 'Title, date & time, and deadline are required.');
       return;
     }
+    const dateTimeDate = new Date(dateTime);
     const deadlineDate = new Date(deadline);
-    if (isNaN(deadlineDate.getTime())) {
+    if (isNaN(dateTimeDate.getTime()) || isNaN(deadlineDate.getTime())) {
       Alert.alert('Invalid date', 'Use format YYYY-MM-DDTHH:mm, e.g. 2026-08-30T18:00');
       return;
     }
@@ -31,7 +33,7 @@ export default function AddTaskScreen({ navigation }: any) {
         description,
         category: category || 'General',
         priority,
-        dateTime: new Date().toISOString(),
+        dateTime: dateTimeDate.toISOString(),
         deadline: deadlineDate.toISOString(),
       });
       navigation.goBack();
@@ -58,6 +60,15 @@ export default function AddTaskScreen({ navigation }: any) {
 
       <Text style={styles.label}>Category / Tag</Text>
       <TextInput style={styles.input} value={category} onChangeText={setCategory} placeholder="Work, Personal..." />
+
+      <Text style={styles.label}>Date & Time (YYYY-MM-DDTHH:mm)</Text>
+      <TextInput
+        style={styles.input}
+        value={dateTime}
+        onChangeText={setDateTime}
+        placeholder="2026-08-30T09:00"
+        autoCapitalize="none"
+      />
 
       <Text style={styles.label}>Deadline (YYYY-MM-DDTHH:mm)</Text>
       <TextInput

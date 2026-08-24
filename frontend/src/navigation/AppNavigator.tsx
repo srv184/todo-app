@@ -1,4 +1,5 @@
 import React from 'react';
+import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
@@ -13,7 +14,13 @@ const Stack = createNativeStackNavigator();
 export default function AppNavigator() {
   const { user, loading } = useAuth();
 
-  if (loading) return null; // could render a splash screen here
+  if (loading) {
+    return (
+      <View style={styles.splash}>
+        <ActivityIndicator size="large" color="#6C5CE7" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
@@ -37,3 +44,7 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0F1115' },
+});

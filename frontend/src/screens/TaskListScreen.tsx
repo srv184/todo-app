@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTasks } from '../context/TaskContext';
 import { useAuth } from '../context/AuthContext';
@@ -14,7 +14,7 @@ const SORT_OPTIONS: { key: SortMode; label: string }[] = [
 ];
 
 export default function TaskListScreen({ navigation }: any) {
-  const { tasks, sortMode, setSortMode, refreshTasks, toggleComplete, deleteTask } = useTasks();
+  const { tasks, loading, error, sortMode, setSortMode, refreshTasks, toggleComplete, deleteTask } = useTasks();
   const { logout } = useAuth();
   const [focusTask, setFocusTask] = useState<Task | null>(null);
 
@@ -54,15 +54,26 @@ export default function TaskListScreen({ navigation }: any) {
         ))}
       </View>
 
-      <FlatList
-        data={tasks}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={{ padding: 16 }}
-        ListEmptyComponent={<Text style={styles.empty}>No tasks yet. Add your first one!</Text>}
-        renderItem={({ item }) => (
-          <TaskItem task={item} onToggle={toggleComplete} onDelete={deleteTask} onFocus={setFocusTask} />
-        )}
-      />
+      {loading ? (
+        <ActivityIndicator style={styles.status} size="large" color="#6C5CE7" />
+      ) : error ? (
+        <View style={styles.status}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={refreshTasks}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={tasks}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={{ padding: 16 }}
+          ListEmptyComponent={<Text style={styles.empty}>No tasks yet. Add your first one!</Text>}
+          renderItem={({ item }) => (
+            <TaskItem task={item} onToggle={toggleComplete} onDelete={deleteTask} onFocus={setFocusTask} />
+          )}
+        />
+      )}
 
       <TouchableOpacity style={styles.fab} onPress={() => navigation.navigate('AddTask')}>
         <Text style={styles.fabText}>+</Text>
@@ -90,6 +101,10 @@ const styles = StyleSheet.create({
   sortChipActive: { backgroundColor: '#6C5CE7' },
   sortChipText: { color: '#fff', fontSize: 13 },
   empty: { color: '#9AA0AC', textAlign: 'center', marginTop: 60 },
+  status: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  errorText: { color: '#FF6B6B', textAlign: 'center', marginBottom: 16 },
+  retryButton: { backgroundColor: '#6C5CE7', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 },
+  retryText: { color: '#fff', fontWeight: '700' },
   fab: {
     position: 'absolute',
     right: 24,

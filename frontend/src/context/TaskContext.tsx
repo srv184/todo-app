@@ -5,6 +5,8 @@ import type { Task, SortMode } from '../types';
 
 interface TaskContextValue {
   tasks: Task[];
+  loading: boolean;
+  error: string | null;
   sortMode: SortMode;
   setSortMode: (m: SortMode) => void;
   refreshTasks: () => Promise<void>;
@@ -18,11 +20,21 @@ const TaskContext = createContext<TaskContextValue | undefined>(undefined);
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>('smart');
 
   const refreshTasks = useCallback(async () => {
-    const { data } = await api.get('/tasks', { params: { sortBy: sortMode } });
-    setTasks(sortTasks(data, sortMode));
+    setLoading(true);
+    setError(null);
+    try {
+      const { data } = await api.get('/tasks', { params: { sortBy: sortMode } });
+      setTasks(sortTasks(data, sortMode));
+    } catch (err: any) {
+      setError(err?.response?.data?.message ?? 'Failed to load tasks');
+    } finally {
+      setLoading(false);
+    }
   }, [sortMode]);
 
   const addTask = async (payload: Partial<Task>) => {
@@ -48,7 +60,18 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <TaskContext.Provider
-      value={{ tasks, sortMode, setSortMode, refreshTasks, addTask, toggleComplete, deleteTask, logFocusMinutes }}
+      value={{
+        tasks,
+        loading,
+        error,
+        sortMode,
+        setSortMode,
+        refreshTasks,
+        addTask,
+        toggleComplete,
+        deleteTask,
+        logFocusMinutes,
+      }}
     >
       {children}
     </TaskContext.Provider>
