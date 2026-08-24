@@ -10,6 +10,7 @@ const {
   logFocusMinutes,
 } = require('../controllers/taskController');
 
+// Apply JWT verification once so every task operation is protected.
 router.use(auth); // every task route requires a valid JWT
 
 router.post('/', createTask);

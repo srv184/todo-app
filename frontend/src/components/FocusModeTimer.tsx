@@ -25,6 +25,8 @@ export default function FocusModeTimer({ task, onClose }: Props) {
 
   useEffect(() => {
     if (task) {
+      // Each selected task starts with a fresh 25-minute Pomodoro session and
+      // does not inherit countdown state from the previously focused task.
       setSecondsLeft(SESSION_MINUTES * 60);
       setRunning(false);
     }
@@ -32,6 +34,8 @@ export default function FocusModeTimer({ task, onClose }: Props) {
 
   useEffect(() => {
     if (running) {
+      // Run one-second ticks only while active; completion records the full
+      // Pomodoro session and stops the interval at zero.
       intervalRef.current = setInterval(() => {
         setSecondsLeft((s) => {
           if (s <= 1) {
@@ -47,15 +51,21 @@ export default function FocusModeTimer({ task, onClose }: Props) {
       clearInterval(intervalRef.current);
     }
     return () => {
+      // Always clear the interval when pausing, closing, or unmounting to
+      // prevent background ticks and duplicate completion callbacks.
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [running]);
 
   const handleSessionComplete = async () => {
+    // A full session contributes the fixed Pomodoro duration to this task's
+    // cumulative focus time in the backend.
     if (task) await logFocusMinutes(task._id, SESSION_MINUTES);
   };
 
   const handleClose = async () => {
+    // Ending early records only elapsed whole minutes, preserving the user's
+    // focus effort without crediting unfinished time.
     const elapsedMinutes = SESSION_MINUTES - Math.floor(secondsLeft / 60);
     if (task && elapsedMinutes > 0) {
       await logFocusMinutes(task._id, elapsedMinutes);

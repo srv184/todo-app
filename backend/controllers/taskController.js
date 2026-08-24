@@ -3,6 +3,8 @@ const { computePriorityScore } = require('../utils/priorityScore');
 
 exports.createTask = async (req, res) => {
   try {
+    // Create the task under the authenticated identity, never a client-supplied
+    // owner, and calculate its initial Smart Priority Score server-side.
     const { title, description, dateTime, deadline, priority, category, tags } = req.body;
     if (!title || !dateTime || !deadline) {
       return res.status(400).json({ message: 'title, dateTime and deadline are required' });
@@ -28,6 +30,8 @@ exports.createTask = async (req, res) => {
 
 exports.getTasks = async (req, res) => {
   try {
+    // Scope retrieval to the authenticated user; optional filters never cross
+    // that ownership boundary.
     const { sortBy = 'smart', category, completed } = req.query;
     const filter = { user: req.userId };
     if (category) filter.category = category;
@@ -53,15 +57,19 @@ exports.getTasks = async (req, res) => {
 
     res.json(tasks);
   } catch (err) {
+    // Surface a consistent API failure if querying, scoring, or sorting fails.
     res.status(500).json({ message: 'Failed to fetch tasks', error: err.message });
   }
 };
 
 exports.updateTask = async (req, res) => {
   try {
+    // Match both task ID and owner so a user cannot update another user's task.
     const task = await Task.findOne({ _id: req.params.id, user: req.userId });
     if (!task) return res.status(404).json({ message: 'Task not found' });
 
+    // Apply the permitted task changes, then recompute its ranking because a
+    // priority, deadline, or completion update can change Smart sorting.
     Object.assign(task, req.body);
     task.priorityScore = computePriorityScore(task);
     await task.save();
@@ -73,6 +81,7 @@ exports.updateTask = async (req, res) => {
 
 exports.toggleComplete = async (req, res) => {
   try {
+    // Completion changes the ranking rule, so recalculate the score before save.
     const task = await Task.findOne({ _id: req.params.id, user: req.userId });
     if (!task) return res.status(404).json({ message: 'Task not found' });
     task.completed = !task.completed;
@@ -100,6 +109,7 @@ exports.logFocusMinutes = async (req, res) => {
 
 exports.deleteTask = async (req, res) => {
   try {
+    // Delete only when the requested task belongs to the authenticated user.
     const task = await Task.findOneAndDelete({ _id: req.params.id, user: req.userId });
     if (!task) return res.status(404).json({ message: 'Task not found' });
     res.json({ message: 'Task deleted' });

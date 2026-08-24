@@ -1,3 +1,5 @@
+# Build the Android application in GitHub Actions on a cloud Ubuntu runner,
+# which provides the Linux toolchain needed for a consistent Android build.
 name: Build Android Debug APK
 
 on:
@@ -34,6 +36,8 @@ jobs:
         run: chmod +x frontend/android/gradlew
 
       - name: Build release APK
+        # A release build packages the React Native JavaScript bundle into the
+        # APK, so the installed app runs without a local Metro development server.
         working-directory: frontend/android
         run: ./gradlew assembleRelease --no-daemon
 

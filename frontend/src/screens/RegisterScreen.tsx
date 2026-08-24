@@ -10,6 +10,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [submitting, setSubmitting] = useState(false);
 
   const handleRegister = async () => {
+    // Check the minimum registration requirements before creating an account.
     if (!email || !password) {
       Alert.alert('Missing info', 'Please enter both email and password.');
       return;
@@ -20,8 +21,12 @@ export default function RegisterScreen({ navigation }: any) {
     }
     try {
       setSubmitting(true);
+      // Registration persists the returned session, so the navigator moves to
+      // the task flow without requiring the new user to log in again.
       await register(email, password, name);
     } catch (err: any) {
+      // Show server validation/conflict details when available and keep a
+      // fallback message for errors without an API response.
       Alert.alert('Registration failed', err?.response?.data?.message ?? 'Please try again.');
     } finally {
       setSubmitting(false);

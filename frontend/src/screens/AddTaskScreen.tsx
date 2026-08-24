@@ -16,18 +16,24 @@ export default function AddTaskScreen({ navigation }: any) {
   const [submitting, setSubmitting] = useState(false);
 
   const handleSave = async () => {
+    // A task needs a title, scheduled date-time, and deadline so it can be
+    // displayed and prioritized meaningfully after creation.
     if (!title.trim() || !dateTime || !deadline) {
       Alert.alert('Missing info', 'Title, date & time, and deadline are required.');
       return;
     }
     const dateTimeDate = new Date(dateTime);
     const deadlineDate = new Date(deadline);
+    // Convert validated text dates to ISO strings so the backend stores one
+    // timezone-safe representation for scheduling and deadline calculations.
     if (isNaN(dateTimeDate.getTime()) || isNaN(deadlineDate.getTime())) {
       Alert.alert('Invalid date', 'Use format YYYY-MM-DDTHH:mm, e.g. 2026-08-30T18:00');
       return;
     }
     try {
       setSubmitting(true);
+      // Preserve the selected category/tag and priority when submitting the
+      // complete task payload through centralized task state.
       await addTask({
         title: title.trim(),
         description,

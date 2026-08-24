@@ -7,6 +7,8 @@ import TaskItem from '../components/TaskItem';
 import FocusModeTimer from '../components/FocusModeTimer';
 import type { SortMode, Task } from '../types';
 
+// Expose the three supported orderings: combined Smart ranking, nearest
+// deadline first, or the user's explicit priority level.
 const SORT_OPTIONS: { key: SortMode; label: string }[] = [
   { key: 'smart', label: 'Smart' },
   { key: 'deadline', label: 'Deadline' },
@@ -20,11 +22,15 @@ export default function TaskListScreen({ navigation }: any) {
 
   useFocusEffect(
     useCallback(() => {
+      // Reload when this screen regains focus so newly added or changed tasks
+      // are reflected even when the list stayed mounted in the stack.
       refreshTasks();
     }, [refreshTasks])
   );
 
   useEffect(() => {
+    // A sort choice affects the requested order, so reload tasks whenever the
+    // mode changes to apply smart, deadline, or priority ordering.
     refreshTasks();
   }, [sortMode]);
 
@@ -55,8 +61,11 @@ export default function TaskListScreen({ navigation }: any) {
       </View>
 
       {loading ? (
+        // Do not render a partial list while the requested task order is loading.
         <ActivityIndicator style={styles.status} size="large" color="#6C5CE7" />
       ) : error ? (
+        // Keep the failure visible and offer an explicit retry instead of
+        // treating an unsuccessful request as an empty task list.
         <View style={styles.status}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={refreshTasks}>
@@ -64,6 +73,8 @@ export default function TaskListScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       ) : (
+        // FlatList renders the backend-synchronized, selected sort order and
+        // supplies a distinct empty state only after a successful load.
         <FlatList
           data={tasks}
           keyExtractor={(item) => item._id}

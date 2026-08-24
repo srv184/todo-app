@@ -13,11 +13,15 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+// Share the signed-in user and session actions across the navigation tree so
+// every screen follows a single source of truth for authentication.
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Restore the persisted session before choosing a navigation flow, avoiding
+    // a brief and misleading flash of the unauthenticated screens on launch.
     (async () => {
       const stored = await AsyncStorage.getItem('user');
       if (stored) setUser(JSON.parse(stored));
@@ -26,17 +30,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const persist = async (token: string, u: User) => {
+    // Store the token for authenticated API requests and update Context only
+    // after storage succeeds, so login and registration share the same handoff.
     await AsyncStorage.setItem('token', token);
     await AsyncStorage.setItem('user', JSON.stringify(u));
     setUser(u);
   };
 
   const login = async (email: string, password: string) => {
+    // Authentication failures are deliberately allowed to reach the calling
+    // screen, where they can be shown as a user-facing login error.
     const { data } = await api.post('/auth/login', { email, password });
     await persist(data.token, data.user);
   };
 
   const register = async (email: string, password: string, name?: string) => {
+    // A successful registration immediately establishes the same persisted
+    // session as login, so navigation reacts without a separate sign-in step.
     const { data } = await api.post('/auth/register', { email, password, name });
     await persist(data.token, data.user);
   };

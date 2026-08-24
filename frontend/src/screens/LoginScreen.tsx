@@ -9,14 +9,20 @@ export default function LoginScreen({ navigation }: any) {
   const [submitting, setSubmitting] = useState(false);
 
   const handleLogin = async () => {
+    // Validate locally before requesting authentication so avoidable failures
+    // do not require a round trip to the backend.
     if (!email || !password) {
       Alert.alert('Missing info', 'Please enter both email and password.');
       return;
     }
     try {
       setSubmitting(true);
+      // The Context persists a successful session; AppNavigator then switches
+      // to the authenticated task flow from the updated user state.
       await login(email, password);
     } catch (err: any) {
+      // Prefer the API's credential error while retaining a safe fallback for
+      // network or unexpected failures.
       Alert.alert('Login failed', err?.response?.data?.message ?? 'Please try again.');
     } finally {
       setSubmitting(false);

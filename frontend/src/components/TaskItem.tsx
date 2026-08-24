@@ -17,11 +17,14 @@ interface Props {
 
 export default function TaskItem({ task, onToggle, onDelete, onFocus }: Props) {
   const deadline = new Date(task.deadline);
+  // Completed tasks are never labelled overdue, even if their deadline has
+  // passed, because their status takes precedence in the task presentation.
   const overdue = !task.completed && deadline.getTime() < Date.now();
 
   return (
     <View style={[styles.card, task.completed && styles.cardCompleted]}>
       <TouchableOpacity onPress={() => onToggle(task._id)} style={styles.checkbox}>
+        {/* Completion is delegated to shared task state so the API and every list item stay synchronized. */}
         <View style={[styles.checkboxInner, task.completed && styles.checkboxChecked]} />
       </TouchableOpacity>
 
@@ -34,6 +37,7 @@ export default function TaskItem({ task, onToggle, onDelete, onFocus }: Props) {
           <Text style={[styles.meta, overdue && styles.overdue]}>
             {overdue ? 'Overdue' : `Due ${deadline.toLocaleDateString()}`}
           </Text>
+          {/* The Smart Priority Score makes the combined priority/deadline rank visible to the user. */}
           <Text style={styles.score}>Score {task.priorityScore}</Text>
         </View>
       </View>
@@ -43,6 +47,7 @@ export default function TaskItem({ task, onToggle, onDelete, onFocus }: Props) {
           <Text style={styles.actionText}>Focus</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => onDelete(task._id)} style={styles.actionBtn}>
+          {/* Delete is handled by shared task state, which removes the task locally and on the backend. */}
           <Text style={[styles.actionText, { color: '#FF6B6B' }]}>Delete</Text>
         </TouchableOpacity>
       </View>

@@ -18,6 +18,8 @@ interface TaskContextValue {
 
 const TaskContext = createContext<TaskContextValue | undefined>(undefined);
 
+// Centralize task data and mutations so all task screens stay consistent with
+// the backend instead of maintaining competing local copies of the list.
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,12 +27,16 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const [sortMode, setSortMode] = useState<SortMode>('smart');
 
   const refreshTasks = useCallback(async () => {
+    // Fetch the user's current tasks for the selected order; the local sorter
+    // preserves that presentation even if the API response order changes.
     setLoading(true);
     setError(null);
     try {
       const { data } = await api.get('/tasks', { params: { sortBy: sortMode } });
       setTasks(sortTasks(data, sortMode));
     } catch (err: any) {
+      // Preserve the server's useful message when available so the list can
+      // present a retryable failure rather than silently showing stale data.
       setError(err?.response?.data?.message ?? 'Failed to load tasks');
     } finally {
       setLoading(false);
@@ -38,22 +44,30 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   }, [sortMode]);
 
   const addTask = async (payload: Partial<Task>) => {
+    // Refresh after the server creates the task so computed fields and the
+    // active sort order come from the authoritative backend response.
     await api.post('/tasks', payload);
     await refreshTasks();
   };
 
   const toggleComplete = async (id: string) => {
+    // Optimistically reflect completion for immediate feedback, then reload to
+    // reconcile the final status and recalculated priority score with the API.
     setTasks((prev) => prev.map((t) => (t._id === id ? { ...t, completed: !t.completed } : t)));
     await api.patch(`/tasks/${id}/toggle`);
     await refreshTasks();
   };
 
   const deleteTask = async (id: string) => {
+    // Remove the item locally first to keep the list responsive while the
+    // delete request commits against the backend.
     setTasks((prev) => prev.filter((t) => t._id !== id));
     await api.delete(`/tasks/${id}`);
   };
 
   const logFocusMinutes = async (id: string, minutes: number) => {
+    // Focus time is recorded by the task API, then refreshed so its persisted
+    // total is shared by every screen using this Context.
     await api.patch(`/tasks/${id}/focus`, { minutes });
     await refreshTasks();
   };

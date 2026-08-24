@@ -15,6 +15,8 @@ export default function AppNavigator() {
   const { user, loading } = useAuth();
 
   if (loading) {
+    // Wait for persisted authentication to finish restoring before selecting a
+    // stack, preventing users from briefly entering the wrong navigation flow.
     return (
       <View style={styles.splash}>
         <ActivityIndicator size="large" color="#6C5CE7" />
@@ -25,6 +27,7 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       {user ? (
+        // Signed-in users receive task state and the authenticated task flow.
         <TaskProvider>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="TaskList" component={TaskListScreen} />
@@ -36,6 +39,7 @@ export default function AppNavigator() {
           </Stack.Navigator>
         </TaskProvider>
       ) : (
+        // Visitors without a restored session can access only the auth flow.
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />

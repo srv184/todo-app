@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// Define the account record used for authentication and user identity.
 const userSchema = new mongoose.Schema(
   {
     email: {
@@ -11,6 +12,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     password: {
+      // The schema stores a bcrypt hash, never the plaintext credential.
       type: String,
       required: true,
       minlength: 6,
@@ -24,6 +26,8 @@ const userSchema = new mongoose.Schema(
 );
 
 // Hash password before saving
+// This keeps plaintext passwords out of storage while preserving bcrypt-based
+// credential comparison during login.
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   const salt = await bcrypt.genSalt(10);
